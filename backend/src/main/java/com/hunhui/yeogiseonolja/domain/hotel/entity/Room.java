@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Getter
@@ -32,6 +33,9 @@ public class Room extends BaseEntity {
 
     @Column(nullable = false)
     private Integer maxPeopleCount;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reservation> reservations;
 
     @Builder
     public Room(Hotel hotel, String name, Integer price, Integer count, Integer maxPeopleCount) {
