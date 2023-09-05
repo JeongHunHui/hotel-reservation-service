@@ -5,6 +5,7 @@ import com.hunhui.yeogiseonolja.domain.hotel.entity.QHotel;
 import com.hunhui.yeogiseonolja.domain.hotel.entity.QReservation;
 import com.hunhui.yeogiseonolja.domain.hotel.entity.QRoom;
 import com.hunhui.yeogiseonolja.domain.hotel.entity.SearchResultSortType;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.Coalesce;
@@ -73,6 +74,16 @@ public class HotelRepositoryCustomImpl implements HotelRepositoryCustom {
 
 
   private JPAQuery<Long> getAvailableRoomsQuery(LocalDate startDate, LocalDate endDate, Long detailRegionId, Long categoryId, Integer maxPeopleCount, Integer minPrice, Integer maxPrice) {
+    BooleanBuilder dynamicConditions = new BooleanBuilder();
+
+    if (minPrice != null) {
+      dynamicConditions.and(room.price.goe(minPrice));
+    }
+
+    if (maxPrice != null) {
+      dynamicConditions.and(room.price.loe(maxPrice));
+    }
+
     return queryFactory
             .select(room.id)
             .from(room)
@@ -83,13 +94,13 @@ public class HotelRepositoryCustomImpl implements HotelRepositoryCustom {
             .where(hotel.detailRegion.id.eq(detailRegionId)
                     .and(hotel.category.id.eq(categoryId))
                     .and(room.maxPeopleCount.goe(maxPeopleCount))
-                    .and(room.price.goe(minPrice))
-                    .and(room.price.loe(maxPrice)))
+                    .and(dynamicConditions))
             .groupBy(room.id, room.count)
             .having(room.count.gt(
                     new Coalesce<Long>().add(count(reservation.id)).add(0L)
             ));
   }
+
 
   private OrderSpecifier<?> getOrderByExpression(SearchResultSortType sortType) {
     Boolean isAsc = sortType.getIsAsc();
